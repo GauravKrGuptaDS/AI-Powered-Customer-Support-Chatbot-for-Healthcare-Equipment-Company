@@ -1,0 +1,2 @@
+# AI-Powered-Customer-Support-Chatbot-for-Healthcare-Equipment-Company
+This project builds a real-time AI-powered chatbot (non-voice) to handle customer support for a  medical equipment manufacturing company. Customers can interact through a web-based  or in-app chat interface. The chatbot will validate the user's identity, detect their intent, and  provide responses using either a RAG pipeline or SQL database.
