@@ -1,0 +1,589 @@
+{
+  "name": "CPSP4_SQL Workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "inputSource": "jsonExample",
+        "jsonExample": "{\n  \"user_id\": 1,\n  \"client_id\": \"CL001\",\n  \"intent\": \"order_status\",\n  \"question\": \"Where is my order?\"\n}"
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -960,
+        -100
+      ],
+      "id": "cf270014-e2b9-41e1-b132-929244da3637",
+      "name": "When Executed by Another Workflow"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.intent }}",
+                    "rightValue": "order_status",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "c8d36fc5-99f4-4094-84cb-577fabbe247a"
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "1f6d4144-f101-49e5-a531-cacbe0d39b12",
+                    "leftValue": "={{ $json.intent }}",
+                    "rightValue": "warranty",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "e055c240-9e61-4ca6-9ea0-8c01753fb751",
+                    "leftValue": "={{ $json.intent }}",
+                    "rightValue": "complaint",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "aa1aa1ba-4df4-408b-b5a3-f602c8d952c8",
+                    "leftValue": "={{ $json.intent }}",
+                    "rightValue": "invoice",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "9095a546-c098-4964-ae42-93c03f9c7416",
+                    "leftValue": "={{ $json.intent }}",
+                    "rightValue": "installation",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "cbb2773a-e461-4b5a-98bd-ad08a6275a95",
+                    "leftValue": "={{ $json.intent }}",
+                    "rightValue": "maintenance",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "a6d27e82-b379-40c9-afa8-9463ca81a1f7",
+                    "leftValue": "={{ $json.intent }}",
+                    "rightValue": "spare_parts",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        -740,
+        -100
+      ],
+      "id": "55a08924-de1a-4e6b-8de2-b49dd7219674",
+      "name": "Intent Router"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT\n    o.order_id,\n    e.equipment_name,\n    o.order_status,\n    o.expected_delivery\nFROM orders o inner join equipment e \n  on o.equipment_id = e.equipment_id and o.customer_id = e.customer_id\nWHERE\no.customer_id=$1\nORDER BY o.created_at DESC\nLIMIT 1;",
+        "options": {
+          "queryReplacement": "={{$json.user_id}}"
+        }
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        -500,
+        -560
+      ],
+      "id": "6d7c71b3-0481-4e32-9fc0-99ba91f33436",
+      "name": "Get Order",
+      "credentials": {
+        "postgres": {
+          "id": "LrwfLCFl9I9fh8LL",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT\ne.equipment_name,\nw.start_date,\nw.end_date,\nw.warranty_status\nFROM warranty w inner join equipment e\n\ton w.customer_id = e.customer_id and w.equipment_id = e.equipment_id\nWHERE\nw.customer_id=$1;",
+        "options": {
+          "queryReplacement": "={{$json.user_id}}"
+        }
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        -380,
+        -400
+      ],
+      "id": "33291b93-a327-4446-8a48-cbf7e505da29",
+      "name": "Get Warranty",
+      "credentials": {
+        "postgres": {
+          "id": "LrwfLCFl9I9fh8LL",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT\nticket_number,\ncomplaint_status,\npriority,\nassigned_engineer\nFROM complaints\nWHERE\ncustomer_id=$1\nORDER BY created_at DESC\nLIMIT 1;",
+        "options": {
+          "queryReplacement": "={{$json.user_id}}"
+        }
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        -260,
+        -240
+      ],
+      "id": "00d18c01-5c97-40b2-989e-d060e69ba289",
+      "name": "Get Complaint",
+      "credentials": {
+        "postgres": {
+          "id": "LrwfLCFl9I9fh8LL",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT\ninvoice_number,\ninvoice_date,\ninvoice_amount,\npayment_status\nFROM invoices\nWHERE\ncustomer_id=$1\nORDER BY invoice_date DESC\nLIMIT 1;",
+        "options": {
+          "queryReplacement": "={{$json.user_id}}"
+        }
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        -140,
+        -80
+      ],
+      "id": "e0a85a03-7ab3-4eff-b6fc-b7f3175c4df5",
+      "name": "Get Invoice",
+      "credentials": {
+        "postgres": {
+          "id": "LrwfLCFl9I9fh8LL",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT\n    e.equipment_name,\n    m.maintenance_type,\n    m.visit_date,\n    m.maintenance_status,\n    m.engineer_name\nFROM maintenance m inner join equipment e\n\ton m.customer_id = e.customer_id and m.equipment_id = e.equipment_id\nWHERE m.customer_id = $1\nORDER BY m.visit_date DESC\nLIMIT 1;",
+        "options": {
+          "queryReplacement": "={{$json.user_id}}"
+        }
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        -380,
+        220
+      ],
+      "id": "59a33517-bfab-47cb-a443-1234df183169",
+      "name": "Get Maintenance",
+      "credentials": {
+        "postgres": {
+          "id": "LrwfLCFl9I9fh8LL",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT\n   \te.equipment_name,\n    sp.part_name,\n\tsp.part_number,\n\tsp.stock_quantity, \n    sp.price\nFROM spare_parts sp inner join equipment e \n\ton sp.equipment_id = e.equipment_id\nWHERE e.customer_id = $1\nORDER BY part_id DESC\nLIMIT 5;",
+        "options": {
+          "queryReplacement": "={{$json.user_id}}"
+        }
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        -520,
+        360
+      ],
+      "id": "bea693f7-48c5-46d6-ac42-d4fbfd50af2b",
+      "name": "Get Spare Parts",
+      "credentials": {
+        "postgres": {
+          "id": "LrwfLCFl9I9fh8LL",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Customer Question: {{ $('When Executed by Another Workflow').item.json.question }}\n\nIntent: {{ $('When Executed by Another Workflow').item.json.intent }}\n\nSQL Result: {{ JSON.stringify($json, null, 2) }}",
+        "options": {
+          "systemMessage": "You are a healthcare customer support assistant.\n\nUse ONLY the SQL result provided.\n\nDo not make up any information.\n\nIf the SQL result is empty, respond exactly:\n\n\"I couldn't find any matching records.\"\n\nFormat the answer in a friendly, concise way."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2,
+      "position": [
+        220,
+        -100
+      ],
+      "id": "372212ab-6c3b-46a0-8d8a-4e4cb0d7b94d",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4.1-mini"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        240,
+        140
+      ],
+      "id": "48b7ace2-7aa1-4283-be04-98fc2f1b88e4",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "NBbu3mTvlLPlxzLE",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "={\n  \"success\": true,\n  \"datasource\": \"PostgreSQL\",\n  \"user_id\": {{ $('When Executed by Another Workflow').item.json.user_id }},\n  \"question\": \"{{ $('When Executed by Another Workflow').item.json.question }}\",\n  \"intent\": \"{{ $('When Executed by Another Workflow').item.json.intent }}\",\n  \"response\": \"{{ $json.output }}\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        560,
+        -100
+      ],
+      "id": "4bbe687e-5d96-4655-87d0-5097f1882fea",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT\n    o.order_id,\n    e.equipment_name,\n    e.model_number, \n\te.serial_number,\n\te.installation_date, \n\te.equipment_status\nFROM equipment e INNER JOIN orders o\n    ON e.customer_id = o.customer_id and e.equipment_id = o.equipment_id \nWHERE e.customer_id = $1\nORDER BY e.installation_date DESC\nLIMIT 1;",
+        "options": {
+          "queryReplacement": "={{$json.user_id}}"
+        }
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        -260,
+        80
+      ],
+      "id": "f4a41058-9c8e-44f8-b18c-b3ac2e96944c",
+      "name": "Get Equipment",
+      "credentials": {
+        "postgres": {
+          "id": "LrwfLCFl9I9fh8LL",
+          "name": "Postgres account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "Intent Router",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Intent Router": {
+      "main": [
+        [
+          {
+            "node": "Get Order",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Get Warranty",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Get Complaint",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Get Invoice",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Get Equipment",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Get Maintenance",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Get Spare Parts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Invoice": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Complaint": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Warranty": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Order": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Maintenance": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Spare Parts": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Equipment": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "0a11e8c5-a4a8-4188-a281-3818d212947e",
+  "meta": {
+    "instanceId": "33ce5477bd6687a36b6131ddcd48d8e18b7304c0e1daab29dce8e9cf0378d28b"
+  },
+  "id": "0bNhUVLV98COlmcU",
+  "tags": []
+}

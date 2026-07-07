@@ -1,0 +1,292 @@
+{
+  "name": "CPSP4_Login",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "login",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -1300,
+        -60
+      ],
+      "id": "1b7e3694-25b5-4b7a-9218-db8b0b6db33c",
+      "name": "Webhook",
+      "webhookId": "bff7b7dd-b2e6-4ba8-b97f-cd6612b631d8"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "e82aa9bb-6c29-4cf7-bc42-c3323cd99d8c",
+              "name": "email",
+              "value": "={{ $json.body.email }}",
+              "type": "string"
+            },
+            {
+              "id": "0ae59986-8416-4413-9ed6-3a1d9048596a",
+              "name": "password",
+              "value": "={{ $json.body.password }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -1080,
+        -60
+      ],
+      "id": "4f0cb516-d300-4cc6-aff9-8f14f2f21381",
+      "name": "Prepare Request"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT\n    count(*) as CNT\nFROM users\nWHERE\nLOWER(email)=LOWER($1)\n  and password_hash=$2;",
+        "options": {
+          "queryReplacement": "={{$json.email}}, {{ $json.enteredpaswrdhash }}"
+        }
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        -600,
+        -60
+      ],
+      "id": "fb0a9dae-39b1-48b5-a592-a2c7f9cf2ae9",
+      "name": "Validate User",
+      "alwaysOutputData": false,
+      "credentials": {
+        "postgres": {
+          "id": "LrwfLCFl9I9fh8LL",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "ba593f14-ec08-4508-845a-a64715919493",
+              "leftValue": "={{ $json.cnt }}",
+              "rightValue": "0",
+              "operator": {
+                "type": "string",
+                "operation": "notEquals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -320,
+        -80
+      ],
+      "id": "09d77120-fa03-4ccc-b608-31b986138a0c",
+      "name": "User Found?"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "{\n\"success\":false,\n\"message\":\"Invalid Email or password\"\n}",
+        "options": {
+          "responseCode": 401
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        -20,
+        100
+      ],
+      "id": "85392706-a724-407b-8c97-149c0667e1c3",
+      "name": "Unauthorized"
+    },
+    {
+      "parameters": {
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        440,
+        -200
+      ],
+      "id": "ba3e5a04-1e0b-44ca-8e42-820ab278d374",
+      "name": "Respond to Webhook"
+    },
+    {
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "={\n  \"success\": true,\n  \"message\": \"Login successful\",\n  \"user_id\": \"{{ $json.user_id }}\",\n  \"client_id\": \"{{ $json.client_id }}\",\n  \"full_name\": \"{{ $json.full_name }}\",\n  \"company_name\": \"{{ $json.company_name }}\",\n  \"email\": \"{{ $json.email }}\",\n  \"role\": \"{{ $json.role }}\"\n}\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        200,
+        -200
+      ],
+      "id": "69e34937-9870-4b41-8726-e161ef30de9b",
+      "name": "Login Success"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT\n    user_id,\n    client_id, \n    full_name,\n    company_name, \n    email,\n    phone, \n    role\nFROM users\nWHERE\nLOWER(email)=LOWER($1)\n  and password_hash=$2;",
+        "options": {
+          "queryReplacement": "={{ $('Prepare Request').item.json.email }}, {{ $('Crypto').item.json.enteredpaswrdhash }}"
+        }
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        -40,
+        -200
+      ],
+      "id": "91f5bfd6-d3e0-477d-b2a8-2fbdb75a7704",
+      "name": "Get User Details",
+      "alwaysOutputData": false,
+      "credentials": {
+        "postgres": {
+          "id": "LrwfLCFl9I9fh8LL",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "type": "SHA256",
+        "value": "={{ $json.password }}",
+        "dataPropertyName": "enteredpaswrdhash"
+      },
+      "type": "n8n-nodes-base.crypto",
+      "typeVersion": 1,
+      "position": [
+        -860,
+        -60
+      ],
+      "id": "b3251051-0ebb-4929-b24a-f86a0b232bf9",
+      "name": "Crypto"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Prepare Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Request": {
+      "main": [
+        [
+          {
+            "node": "Crypto",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate User": {
+      "main": [
+        [
+          {
+            "node": "User Found?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "User Found?": {
+      "main": [
+        [
+          {
+            "node": "Get User Details",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Unauthorized",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get User Details": {
+      "main": [
+        [
+          {
+            "node": "Login Success",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Login Success": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Crypto": {
+      "main": [
+        [
+          {
+            "node": "Validate User",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "dd624e6a-6e93-4b76-aa4b-4e6e39c13fbe",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "33ce5477bd6687a36b6131ddcd48d8e18b7304c0e1daab29dce8e9cf0378d28b"
+  },
+  "id": "lCC57UqfSfvDhFtG",
+  "tags": []
+}

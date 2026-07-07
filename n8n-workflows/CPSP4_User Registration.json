@@ -1,0 +1,262 @@
+{
+  "name": "CPSP4_User Registration",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "register",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -740,
+        -40
+      ],
+      "id": "d46951c7-c4d2-481f-aae9-5f846aa9b6d3",
+      "name": "Webhook",
+      "webhookId": "31408c61-54fd-469e-b839-cf395ad7ce53"
+    },
+    {
+      "parameters": {
+        "jsCode": "const errors = [];\n\nif (!$input.first().json.body.full_name || $input.first().json.body.full_name.trim() === \"\") {\n  errors.push(\"Full Name is required.\");\n}\n\nif (!$input.first().json.body.client_id || $input.first().json.body.client_id.trim() === \"\") {\n  errors.push(\"Client ID is required.\");\n}\n\nif (!$input.first().json.body.email || $input.first().json.body.email.trim() === \"\") {\n  errors.push(\"Email is required.\");\n}\n\nif (!$input.first().json.body.password || $input.first().json.body.password.length < 8) {\n  errors.push(\"Password must be at least 8 characters.\");\n}\n\n// Basic email format check\nconst emailRegex = /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/;\n\nif ($input.first().json.body.email && !emailRegex.test($input.first().json.body.email)) {\n  errors.push(\"Invalid email format.\");\n}\n\nif (errors.length > 0) {\n  return [{\n    json: {\n      success: false,\n      errors\n    }\n  }];\n}\n\nreturn [{\n  json: {\n    success: true,\n    \n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -520,
+        -40
+      ],
+      "id": "34f1ab20-ebd7-45e7-bf19-937b815243e1",
+      "name": "Code"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "c718f468-2eb9-4e15-9200-6015aa65750a",
+              "leftValue": "={{ $json.success }}",
+              "rightValue": "=",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -300,
+        -40
+      ],
+      "id": "7d2e0990-5d8b-4487-ad49-41f90d44094f",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "{\n  \"success\": false,\n  \"errors\": [\n    \"Email is required\",\n    \"Password too short\"\n  ]\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        -80,
+        60
+      ],
+      "id": "53096212-2f02-4f20-acc0-d0da8e9f924b",
+      "name": "Respond to Webhook"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT count(*) \nFROM users\nWHERE LOWER(email) = LOWER($1)\n   OR client_id = $2;",
+        "options": {
+          "queryReplacement": "={{ $('Webhook').item.json.body.email }}, {{ $('Webhook').item.json.body.client_id }}"
+        }
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        -80,
+        -140
+      ],
+      "id": "80559da0-5e4f-4b06-8265-4da239768539",
+      "name": "Execute a SQL query",
+      "credentials": {
+        "postgres": {
+          "id": "LrwfLCFl9I9fh8LL",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "a80de126-63e0-4914-bf82-149f5cf2093e",
+              "leftValue": "={{ $json.count }}\n",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        140,
+        -140
+      ],
+      "id": "31bded23-75bb-4fb6-8845-c9851a735b51",
+      "name": "If1"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "{\n  \"success\": false,\n  \"message\": \"User already exists.\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        360,
+        -240
+      ],
+      "id": "6178b699-0e74-40cf-a255-ac785e6719fe",
+      "name": "Respond to Webhook1"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO users\n(\n    client_id,\n    full_name,\n    company_name,\n    email,\n    password_hash,\n    phone,\n    role,\n    created_at\n)\nVALUES\n(\n    $1,\n    $2,\n    $3,\n    LOWER($4),\n    $5,\n    $6,\n    $7,\n    NOW()\n)\nRETURNING\n    user_id;",
+        "options": {
+          "queryReplacement": "={{ $('Webhook').item.json.body.client_id }}, {{ $('Webhook').item.json.body.full_name }}, {{ $('Webhook').item.json.body.company_name }}, {{ $('Webhook').item.json.body.email }}, {{ $('Webhook').item.json.body.password }}, {{ $('Webhook').item.json.body.phone }}, {{ $('Webhook').item.json.body.role }}"
+        }
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        360,
+        -40
+      ],
+      "id": "16ef5d9c-e301-4b8c-b1b9-287635cfab7d",
+      "name": "Execute a SQL query1",
+      "credentials": {
+        "postgres": {
+          "id": "LrwfLCFl9I9fh8LL",
+          "name": "Postgres account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Execute a SQL query",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execute a SQL query": {
+      "main": [
+        [
+          {
+            "node": "If1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If1": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Execute a SQL query1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "30746400-174c-4233-ae38-f86e3870fc7b",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "33ce5477bd6687a36b6131ddcd48d8e18b7304c0e1daab29dce8e9cf0378d28b"
+  },
+  "id": "nnkPgBh54SV16TTR",
+  "tags": []
+}

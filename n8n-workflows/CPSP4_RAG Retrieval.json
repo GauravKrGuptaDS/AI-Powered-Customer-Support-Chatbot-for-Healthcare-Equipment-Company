@@ -1,0 +1,284 @@
+{
+  "name": "CPSP4_RAG Retrieval",
+  "nodes": [
+    {
+      "parameters": {
+        "inputSource": "jsonExample",
+        "jsonExample": "{\n    \"user_id\": 1,\n    \"client_id\": \"CL1001\",\n    \"intent\": \"product_documentation\",\n    \"question\": \"Provide the user manual for HeartMate 3 LVAD\"\n}"
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -1100,
+        -280
+      ],
+      "id": "c8688d99-3b50-482f-b424-b8ca152303ba",
+      "name": "When Executed by Another Workflow"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "96ed7eda-3bff-42c2-8de7-d0b6f0ea843b",
+              "name": "user_id",
+              "value": "={{$json.user_id}}",
+              "type": "string"
+            },
+            {
+              "id": "d4fbe790-4e03-46d6-99d5-8c3de507079b",
+              "name": "client_id",
+              "value": "={{$json.client_id}}",
+              "type": "string"
+            },
+            {
+              "id": "a6fbb346-a2c1-4136-b794-b0feef1e847a",
+              "name": "intent",
+              "value": "={{$json.intent}}",
+              "type": "string"
+            },
+            {
+              "id": "b9b3549d-1120-4af0-bc6e-1538c3eece84",
+              "name": "question",
+              "value": "={{$json.question}}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -880,
+        -280
+      ],
+      "id": "43fc4380-b223-4143-99ad-ef6f5cab7ec1",
+      "name": "Prepare Request"
+    },
+    {
+      "parameters": {
+        "mode": "retrieve-as-tool",
+        "toolDescription": "=Use this tool to search the vector database for healthcare equipment documentation. It contains product specifications, user manuals, installation guides, maintenance SOPs, troubleshooting guides, compatibility documents, and regulatory certificates (FDA, CE, ISO). Use the retrieved information to answer customer questions accurately.",
+        "pineconeIndex": {
+          "__rl": true,
+          "value": "cpsp4-rag",
+          "mode": "list",
+          "cachedResultName": "cpsp4-rag"
+        },
+        "topK": 5,
+        "options": {
+          "pineconeNamespace": "cpsp4-rag"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStorePinecone",
+      "typeVersion": 1.3,
+      "position": [
+        -280,
+        -60
+      ],
+      "id": "12c4f1b1-0a10-43bb-9ceb-a9dc10cbf58c",
+      "name": "Pinecone Vector Store",
+      "credentials": {
+        "pineconeApi": {
+          "id": "Sw3KwZOFXrQUeEO6",
+          "name": "PineconeApi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        -380,
+        120
+      ],
+      "id": "7a44c345-3fc5-45fa-b837-3aa3e13d9cae",
+      "name": "Embeddings OpenAI",
+      "credentials": {
+        "openAiApi": {
+          "id": "NBbu3mTvlLPlxzLE",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Customer Question\n\n{{$('Prepare Request').item.json.question}}\n\nRetrieved Context\n\n{{ JSON.stringify($json, null, 2) }}",
+        "options": {
+          "systemMessage": "You are an AI customer support assistant for a healthcare equipment company.\n\nAnswer ONLY using the retrieved context.\n\nDo not use your own knowledge.\n\nIf the context does not contain the answer, reply exactly:\n\n\"I don't know the answer to that.\"\n\nAlways:\n\n• Keep the answer concise.\n\n• Mention the document name if available.\n\n• Mention important specifications if present.\n\n• Never invent information."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2,
+      "position": [
+        -480,
+        -320
+      ],
+      "id": "c68d836c-73f0-4a5d-bfe3-e047860f228d",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4.1-mini"
+        },
+        "options": {
+          "temperature": 0
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        -640,
+        -100
+      ],
+      "id": "b0c9a973-db36-460a-8079-b7452fc5e0e5",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "NBbu3mTvlLPlxzLE",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "0e45fe1f-69cc-4605-82e9-56355b02b97c",
+              "name": "success",
+              "value": true,
+              "type": "boolean"
+            },
+            {
+              "id": "364da120-472d-4b70-b79d-1697f37cb766",
+              "name": "datasource",
+              "value": "Pinecone",
+              "type": "string"
+            },
+            {
+              "id": "711ef0d3-439b-46da-bc13-abcb4b643120",
+              "name": "user_id",
+              "value": "={{ $('Prepare Request').item.json.user_id }}",
+              "type": "number"
+            },
+            {
+              "id": "9cfdc62f-10c6-4830-a6a4-d49466fb8487",
+              "name": "question",
+              "value": "={{ $('Prepare Request').item.json.question }}",
+              "type": "string"
+            },
+            {
+              "id": "fba90d50-4d36-4826-96b9-2b9860684934",
+              "name": "intent",
+              "value": "={{ $('Prepare Request').item.json.intent }}",
+              "type": "string"
+            },
+            {
+              "id": "afabcacb-4a5d-4d06-99c6-f1cd90552cf5",
+              "name": "response",
+              "value": "={{ $json.output }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -120,
+        -320
+      ],
+      "id": "3154a821-9a2a-4f59-855f-f5cd99d11ff1",
+      "name": "Edit Fields"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "Prepare Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings OpenAI": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Pinecone Vector Store",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Request": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pinecone Vector Store": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "cd07b651-6a0d-4f59-a2eb-bb0ab356389b",
+  "meta": {
+    "instanceId": "33ce5477bd6687a36b6131ddcd48d8e18b7304c0e1daab29dce8e9cf0378d28b"
+  },
+  "id": "LVq1fqlpXC8lGsgr",
+  "tags": []
+}
