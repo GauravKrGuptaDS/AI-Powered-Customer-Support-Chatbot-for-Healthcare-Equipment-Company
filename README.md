@@ -1,7 +1,3 @@
-Certainly. Based on the complete project we built—**Appsmith UI + n8n orchestration + PostgreSQL structured-data queries + Pinecone RAG + intent-based routing + login + chat session UI**—below is a GitHub-ready `README.md`.
-
-You can copy this directly into your repository.
-
 ````markdown
 # AI-Powered Customer Support Assistant using RAG + SQL
 
